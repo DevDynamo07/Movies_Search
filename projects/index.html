@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movie Search App</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --primary-bg: #0d0d0d;
+            --card-bg: #1e1e1e;
+            --text-color: #e5e7eb;
+            --accent-color: #3b82f6;
+            --secondary-text: #9ca3af;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--primary-bg);
+            color: var(--text-color);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .movie-card-container {
+            display: grid;
+            gap: 1.5rem;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        }
+
+        .movie-card {
+            background-color: var(--card-bg);
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+            cursor: pointer;
+        }
+
+        .movie-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .movie-poster {
+            width: 100%;
+            height: 350px;
+            object-fit: cover;
+            transition: opacity 0.3s ease;
+        }
+
+        .movie-card:hover .movie-poster {
+            opacity: 0.8;
+        }
+
+        .movie-info {
+            padding: 1.5rem;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .movie-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .movie-year {
+            font-size: 0.875rem;
+            color: var(--secondary-text);
+        }
+
+        .modal-content-inner {
+            transform-style: preserve-3d;
+            animation: fadeInScale 0.4s ease-out forwards;
+        }
+
+        @keyframes fadeInScale {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+    </style>
+</head>
+<body class="p-6 md:p-10">
+    <div class="container">
+        <!-- Header Section -->
+        <header class="text-center my-8 md:my-12">
+            <h1 class="text-4xl md:text-5xl font-bold text-white mb-2">Movie Search App</h1>
+            <p class="text-md text-gray-400">Search for your favorite movies and discover new ones!</p>
+        </header>
+
+        <!-- Search Bar -->
+        <div class="flex flex-col md:flex-row items-center justify-center gap-4 mb-8">
+            <input type="text" id="searchInput" placeholder="Search for a movie..."
+                class="w-full md:w-1/2 p-4 text-lg rounded-full border-2 border-gray-700 bg-gray-800 text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-4 focus:ring-blue-500 focus:border-transparent transition-all duration-300">
+            <button id="searchButton"
+                class="w-full md:w-auto px-8 py-4 bg-blue-600 text-white font-semibold rounded-full shadow-lg hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-transparent transition-all duration-300 transform hover:scale-105">
+                Search
+            </button>
+        </div>
+        
+        <!-- Message/Status area -->
+        <div id="statusMessage" class="text-center text-gray-400 text-lg mb-6 hidden"></div>
+
+        <!-- Movie Results Grid -->
+        <div id="movieGrid" class="movie-card-container">
+            <!-- Movie cards will be inserted here by JavaScript -->
+        </div>
+
+        <!-- Modal for Movie Details -->
+        <div id="movieModal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4 hidden">
+            <div class="modal-content-inner bg-gray-800 text-white rounded-xl shadow-2xl overflow-hidden max-w-2xl w-full flex flex-col md:flex-row">
+                <button id="closeModal" class="absolute top-3 right-3 text-gray-400 hover:text-white text-3xl z-10 transition-colors">
+                    &times;
+                </button>
+                <div id="modal-image-container" class="relative md:w-1/2">
+                    <img id="modal-poster" src="" alt="Movie Poster" class="w-full h-full object-cover">
+                </div>
+                <div id="modal-content" class="p-6 md:w-1/2 flex flex-col">
+                    <h2 id="modal-title" class="text-3xl font-bold mb-2"></h2>
+                    <p id="modal-year" class="text-gray-400 text-lg mb-4"></p>
+                    <div class="flex flex-wrap gap-2 text-sm text-gray-300 mb-4">
+                        <span id="modal-rating" class="bg-gray-700 rounded-full px-3 py-1"></span>
+                        <span id="modal-runtime" class="bg-gray-700 rounded-full px-3 py-1"></span>
+                        <span id="modal-genre" class="bg-gray-700 rounded-full px-3 py-1"></span>
+                    </div>
+                    <p id="modal-plot" class="text-gray-300 text-base mb-4 flex-grow"></p>
+                    <div class="text-sm text-gray-400 mt-auto">
+                        <p><strong class="text-gray-200">Director:</strong> <span id="modal-director"></span></p>
+                        <p><strong class="text-gray-200">Actors:</strong> <span id="modal-actors"></span></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const searchInput = document.getElementById('searchInput');
+        const searchButton = document.getElementById('searchButton');
+        const movieGrid = document.getElementById('movieGrid');
+        const statusMessage = document.getElementById('statusMessage');
+        const movieModal = document.getElementById('movieModal');
+        const closeModalButton = document.getElementById('closeModal');
+        const modalPoster = document.getElementById('modal-poster');
+        const modalTitle = document.getElementById('modal-title');
+        const modalYear = document.getElementById('modal-year');
+        const modalRating = document.getElementById('modal-rating');
+        const modalRuntime = document.getElementById('modal-runtime');
+        const modalGenre = document.getElementById('modal-genre');
+        const modalPlot = document.getElementById('modal-plot');
+        const modalDirector = document.getElementById('modal-director');
+        const modalActors = document.getElementById('modal-actors');
+
+        // Note: You must replace 'YOUR_OMDB_API_KEY' with your actual API key from the OMDb API website.
+        const OMDB_API_KEY = 'ab5f1e03';
+
+        // Helper function to show a status message
+        function showStatus(message, isError = false) {
+            statusMessage.textContent = message;
+            statusMessage.classList.remove('hidden', 'text-gray-400', 'text-red-500');
+            statusMessage.classList.add('block', isError ? 'text-red-500' : 'text-gray-400');
+        }
+
+        // Helper function to hide the status message
+        function hideStatus() {
+            statusMessage.classList.add('hidden');
+        }
+
+        // Function to create and display a movie card
+        function createMovieCard(movie) {
+            const card = document.createElement('div');
+            card.classList.add('movie-card');
+            card.innerHTML = `
+                <img src="${movie.Poster !== 'N/A' ? movie.Poster : 'https://placehold.co/250x350/1f2937/d1d5db?text=No+Poster'}"
+                     alt="${movie.Title} Poster"
+                     class="movie-poster">
+                <div class="movie-info">
+                    <h3 class="movie-title">${movie.Title}</h3>
+                    <p class="movie-year">${movie.Year}</p>
+                </div>
+            `;
+            // Add a click listener to the card to show the modal
+            card.addEventListener('click', () => fetchMovieDetails(movie.imdbID));
+            movieGrid.appendChild(card);
+        }
+
+        // Function to fetch movie details from the API and show the modal
+        async function fetchMovieDetails(imdbID) {
+            showStatus('Fetching movie details...');
+            try {
+                const response = await fetch(`https://www.omdbapi.com/?apikey=${OMDB_API_KEY}&i=${imdbID}`);
+                const data = await response.json();
+                hideStatus();
+                if (data.Response === 'True') {
+                    displayMovieDetails(data);
+                } else if (data.Error === 'Invalid API key!') {
+                    showStatus('Error: The API key is invalid. Please double-check it.', true);
+                } else {
+                    showStatus('Could not find movie details.', true);
+                }
+            } catch (error) {
+                console.error('Error fetching movie details:', error);
+                showStatus('An error occurred while fetching details. Please check your network connection.', true);
+            }
+        }
+        
+        // Function to display movie details in the modal
+        function displayMovieDetails(movie) {
+            modalPoster.src = movie.Poster !== 'N/A' ? movie.Poster : 'https://placehold.co/500x700/1f2937/d1d5db?text=No+Poster';
+            modalTitle.textContent = movie.Title;
+            modalYear.textContent = `(${movie.Year})`;
+            modalRating.textContent = movie.imdbRating !== 'N/A' ? `IMDb: ${movie.imdbRating}` : 'N/A';
+            modalRuntime.textContent = movie.Runtime !== 'N/A' ? movie.Runtime : 'N/A';
+            modalGenre.textContent = movie.Genre !== 'N/A' ? movie.Genre : 'N/A';
+            modalPlot.textContent = movie.Plot !== 'N/A' ? movie.Plot : 'Plot not available.';
+            modalDirector.textContent = movie.Director !== 'N/A' ? movie.Director : 'Not available';
+            modalActors.textContent = movie.Actors !== 'N/A' ? movie.Actors : 'Not available';
+
+            // Show the modal
+            movieModal.classList.remove('hidden');
+        }
+
+        // Function to close the modal
+        function closeModal() {
+            movieModal.classList.add('hidden');
+        }
+
+        // Add event listeners for the modal
+        closeModalButton.addEventListener('click', closeModal);
+        movieModal.addEventListener('click', (e) => {
+            if (e.target === movieModal) {
+                closeModal();
+            }
+        });
+
+        // Main function to search for movies
+        async function searchMovies() {
+            const query = searchInput.value.trim();
+            if (query.length === 0) {
+                showStatus('Please enter a movie title to search.', true);
+                return;
+            }
+
+            movieGrid.innerHTML = '';
+            showStatus('Searching for movies...');
+
+            try {
+                const response = await fetch(`https://www.omdbapi.com/?apikey=${OMDB_API_KEY}&s=${query}`);
+                const data = await response.json();
+                hideStatus();
+
+                if (data.Response === 'True' && data.Search.length > 0) {
+                    data.Search.forEach(movie => {
+                        createMovieCard(movie);
+                    });
+                } else if (data.Error === 'Invalid API key!') {
+                    showStatus('Error: The API key is invalid. Please double-check it.', true);
+                } else {
+                    showStatus('No movies found. Please try a different title.', true);
+                }
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                showStatus('An error occurred. Please check your network connection and try again.', true);
+            }
+        }
+
+        // Event listeners for the search functionality
+        searchButton.addEventListener('click', searchMovies);
+        searchInput.addEventListener('keypress', (event) => {
+            if (event.key === 'Enter') {
+                searchMovies();
+            }
+        });
+
+        // Initialize the app with a default search on load
+        window.addEventListener('load', () => {
+            // Check if the API key is a placeholder
+            if (OMDB_API_KEY === 'YOUR_OMDB_API_KEY') {
+                showStatus('Please replace "YOUR_OMDB_API_KEY" in the JavaScript code with your actual OMDb API key for the app to function.', true);
+            } else {
+                searchInput.value = 'Harry Potter';
+                searchMovies();
+            }
+        });
+    </script>
+</body>
+</html>
